@@ -1,274 +1,115 @@
-# Devops Project: video-converter
-Converting mp4 videos to mp3 in a microservices architecture.
+# 🛠️ DevOps Project: Microservices Python App (Video to Audio Converter)
 
-## Architecture
+This project helped me gain hands-on experience deploying a microservices-based application on AWS using Kubernetes. It’s a Python-based system that converts `.mp4` videos into `.mp3` audio files. The app is built using four microservices running in containers, all deployed and managed on **Amazon EKS (Elastic Kubernetes Service)**.
 
-<p align="center">
-  <img src="./Project documentation/ProjectArchitecture.png" width="600" title="Architecture" alt="Architecture">
-  </p>
+---
 
-## Deploying a Python-based Microservice Application on AWS EKS
+## 🔧 What I Built
 
-### Introduction
+This project is made up of the following services:
 
-This document provides a step-by-step guide for deploying a Python-based microservice application on AWS Elastic Kubernetes Service (EKS). The application comprises four major microservices: `auth-server`, `converter-module`, `database-server` (PostgreSQL and MongoDB), and `notification-server`.
+- **auth-server** – handles user login and JWT authentication
+- **converter-module** – picks up `.mp4` files and converts them into `.mp3`
+- **notification-server** – sends email notifications with two-factor auth
+- **gateway-server** – acts as the API gateway between users and services
 
-### Prerequisites
+I used **RabbitMQ** to pass messages between services, and **PostgreSQL** and **MongoDB** for data storage.
 
-Before you begin, ensure that the following prerequisites are met:
+---
 
-1. **Create an AWS Account:** If you do not have an AWS account, create one by following the steps [here](https://docs.aws.amazon.com/streams/latest/dev/setting-up.html).
+## 🚀 Why I Built This
 
-2. **Install Helm:** Helm is a Kubernetes package manager. Install Helm by following the instructions provided [here](https://helm.sh/docs/intro/install/).
+I wanted to:
+- Learn how to deploy and manage **containerized microservices** at scale
+- Work with **AWS EKS**, **Helm**, and **Kubernetes manifests**
+- Practice securing cloud-native applications using **IAM**, **JWT**, and **Kubernetes secrets**
+- Gain experience with messaging systems like **RabbitMQ** and database integration in cloud workloads
 
-3. **Python:** Ensure that Python is installed on your system. You can download it from the [official Python website](https://www.python.org/downloads/).
+---
 
-4. **AWS CLI:** Install the AWS Command Line Interface (CLI) following the official [installation guide](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html).
+## 🧱 Tools & Services I Used
 
-5. **Install kubectl:** Install the latest stable version of `kubectl` on your system. You can find installation instructions [here](https://kubernetes.io/docs/tasks/tools/).
+| Tool | Purpose |
+|------|---------|
+| **AWS EKS** | Kubernetes hosting |
+| **Helm** | Service deployment |
+| **kubectl** | Cluster management |
+| **Python** | Service logic |
+| **RabbitMQ** | Message queueing |
+| **PostgreSQL / MongoDB** | Persistent data storage |
+| **IAM, Secrets, JWT** | Security & access control |
 
-6. **Databases:** Set up PostgreSQL and MongoDB for your application.
+---
 
-### High Level Flow of Application Deployment
+## ⚙️ How I Deployed It (High-Level Flow)
 
-Follow these steps to deploy your microservice application:
-
-1. **MongoDB and PostgreSQL Setup:** Create databases and enable automatic connections to them.
-
-2. **RabbitMQ Deployment:** Deploy RabbitMQ for message queuing, which is required for the `converter-module`.
-
-3. **Create Queues in RabbitMQ:** Before deploying the `converter-module`, create two queues in RabbitMQ: `mp3` and `video`.
-
-4. **Deploy Microservices:**
-   - **auth-server:** Navigate to the `auth-server` manifest folder and apply the configuration.
-   - **gateway-server:** Deploy the `gateway-server`.
-   - **converter-module:** Deploy the `converter-module`. Make sure to provide your email and password in `converter/manifest/secret.yaml`.
-   - **notification-server:** Configure email for notifications and two-factor authentication (2FA).
-
-5. **Application Validation:** Verify the status of all components by running:
+1. **Set up PostgreSQL and MongoDB** for application persistence  
+2. **Deployed RabbitMQ** for task queuing between microservices  
+3. Created `mp3` and `video` queues in RabbitMQ  
+4. Deployed each service (`auth`, `converter`, `gateway`, `notification`) using **Helm charts** and **Kubernetes manifests**  
+5. Verified everything was working using:
    ```bash
    kubectl get all
-   ```
 
-6. **Destroying the Infrastructure** 
+## 📦 How I Built the EKS Cluster
 
+To create the EKS cluster from scratch, I followed these key steps:
 
-### Low Level Steps
+- Created IAM roles for the EKS cluster and EKS node group  
+- Created the EKS cluster via AWS Console  
+- Configured security groups with inbound rules for services  
+- Enabled the EBS CSI Addon for persistent volume support  
+- Connected to the cluster using the AWS CLI:
 
-#### Cluster Creation
-
-1. **Log in to AWS Console:**
-   - Access the AWS Management Console with your AWS account credentials.
-
-2. **Create eksCluster IAM Role**
-   - Follow the steps mentioned in [this](https://docs.aws.amazon.com/eks/latest/userguide/service_IAM_role.html) documentation using root user
-   - After creating it will look like this:
-
-   <p align="center">
-  <img src="./Project documentation/ekscluster_role.png" width="600" title="ekscluster_role" alt="ekscluster_role">
-  </p>
-
-   - Please attach `AmazonEKS_CNI_Policy` explicitly if it is not attached by default
-
-3. **Create Node Role - AmazonEKSNodeRole**
-   - Follow the steps mentioned in [this](https://docs.aws.amazon.com/eks/latest/userguide/create-node-role.html#create-worker-node-role) documentation using root user
-   - Please note that you do NOT need to configure any VPC CNI policy mentioned after step 5.e under Creating the Amazon EKS node IAM role
-   - Simply attach the following policies to your role once you have created `AmazonEKS_CNI_Policy` , `AmazonEBSCSIDriverPolicy` , `AmazonEC2ContainerRegistryReadOnly`
-     incase it is not attached by default
-   - Your AmazonEKSNodeRole will look like this: 
-
-<p align="center">
-  <img src="./Project documentation/node_iam.png" width="600" title="Node_IAM" alt="Node_IAM">
-  </p>
-
-4. **Open EKS Dashboard:**
-   - Navigate to the Amazon EKS service from the AWS Console dashboard.
-
-5. **Create EKS Cluster:**
-   - Click "Create cluster."
-   - Choose a name for your cluster.
-   - Configure networking settings (VPC, subnets).
-   - Choose the `eksCluster` IAM role that was created above
-   - Review and create the cluster.
-
-6. **Cluster Creation:**
-   - Wait for the cluster to provision, which may take several minutes.
-
-7. **Cluster Ready:**
-   - Once the cluster status shows as "Active," you can now create node groups.
-
-#### Node Group Creation
-
-1. In the "Compute" section, click on "Add node group."
-
-2. Choose the AMI (default), instance type (e.g., t3.medium), and the number of nodes (attach a screenshot here).
-
-3. Click "Create node group."
-
-#### Adding inbound rules in Security Group of Nodes
-
-**NOTE:** Ensure that all the necessary ports are open in the node security group.
-
-<p align="center">
-  <img src="./Project documentation/inbound_rules_sg.png" width="600" title="Inbound_rules_sg" alt="Inbound_rules_sg">
-  </p>
-
-#### Enable EBS CSI Addon
-1. enable addon `ebs csi` this is for enabling pvcs once cluster is created
-
-<p align="center">
-  <img src="./Project documentation/ebs_addon.png" width="600" title="ebs_addon" alt="ebs_addon">
-  </p>
-
-#### Deploying your application on EKS Cluster
-
-1. Clone the code from this repository.
-
-2. Set the cluster context:
-   ```
-   aws eks update-kubeconfig --name <cluster_name> --region <aws_region>
-   ```
-
-### Commands
-
-Here are some essential Kubernetes commands for managing your deployment:
-
-
-### MongoDB
-
-To install MongoDB, set the database username and password in `values.yaml`, then navigate to the MongoDB Helm chart folder and run:
-
-```
-cd Helm_charts/MongoDB
-helm install mongo .
+```bash
+aws eks update-kubeconfig --name <cluster_name> --region <region>
 ```
 
-Connect to the MongoDB instance using:
+## 📡 API Overview
+Once deployed, I tested the system using these endpoints:
 
+🔐 Login
 ```
-mongosh mongodb://<username>:<pwd>@<nodeip>:30005/mp3s?authSource=admin
+POST http://<nodeIP>:30002/login
 ```
+Logs in a user using basic authentication and returns a JWT token.
 
-### PostgreSQL
-
-Set the database username and password in `values.yaml`. Install PostgreSQL from the PostgreSQL Helm chart folder and initialize it with the queries in `init.sql`. For PowerShell users:
-
+## 📤 Upload a Video
 ```
-cd ..
-cd Postgres
-helm install postgres .
+POST http://<nodeIP>:30002/upload
 ```
+Uploads an .mp4 video file and initiates the conversion process.
 
-Connect to the Postgres database and copy all the queries from the "init.sql" file.
+## 📥 Download the Audio
 ```
-psql 'postgres://<username>:<pwd>@<nodeip>:30003/authdb'
+GET http://<nodeIP>:30002/download?fid=<file_id>
 ```
+Downloads the converted .mp3 file using the file identifier.
 
-### RabbitMQ
+## 🔒 Email Notifications & 2FA
 
-Deploy RabbitMQ by running:
+To enable email-based 2FA for this application, I followed these steps:
 
-```
-helm install rabbitmq .
-```
+1. I generated an **app-specific password** from my Gmail account under the "Security" settings  
+2. I stored this password securely in the Kubernetes `secret.yaml` file under the `notification-server` microservice  
+3. This allowed the app to authenticate with Gmail and send **2FA verification emails** to users during login
 
-Ensure you have created two queues in RabbitMQ named `mp3` and `video`. To create queues, visit `<nodeIp>:30004>` and use default username `guest` and password `guest`
+All sensitive credentials were handled securely using Kubernetes Secrets to avoid hardcoding any sensitive data into the manifests or application code.
 
-**NOTE:** Ensure that all the necessary ports are open in the node security group.
+## 🧼 How I Destroyed the Infrastructure
 
-### Apply the manifest file for each microservice:
+Once testing was complete, I cleaned up all the cloud resources to avoid ongoing AWS charges:
 
-- **Auth Service:**
-  ```
-  cd auth-service/manifest
-  kubectl apply -f .
-  ```
+1. I deleted the **EKS Node Group** from the AWS Console  
+2. Then I deleted the **EKS Cluster** itself  
 
-- **Gateway Service:**
-  ```
-  cd gateway-service/manifest
-  kubectl apply -f .
-  ```
+This ensured that no compute, networking, or storage resources remained active after the project was completed.
 
-- **Converter Service:**
-  ```
-  cd converter-service/manifest
-  kubectl apply -f .
-  ```
+## ✅ What I Learned
 
-- **Notification Service:**
-  ```
-  cd notification-service/manifest
-  kubectl apply -f .
-  ```
+Throughout this project, I gained practical experience in:
 
-### Application Validation
-
-After deploying the microservices, verify the status of all components by running:
-
-```
-kubectl get all
-```
-
-### Notification Configuration
-
-
-
-For configuring email notifications and two-factor authentication (2FA), follow these steps:
-
-1. Go to your Gmail account and click on your profile.
-
-2. Click on "Manage Your Google Account."
-
-3. Navigate to the "Security" tab on the left side panel.
-
-4. Enable "2-Step Verification."
-
-5. Search for the application-specific passwords. You will find it in the settings.
-
-6. Click on "Other" and provide your name.
-
-7. Click on "Generate" and copy the generated password.
-
-8. Paste this generated password in `notification-service/manifest/secret.yaml` along with your email.
-
-Run the application through the following API calls:
-
-# API Definition
-
-- **Login Endpoint**
-  ```http request
-  POST http://nodeIP:30002/login
-  ```
-
-  ```console
-  curl -X POST http://nodeIP:30002/login -u <email>:<password>
-  ``` 
-  Expected output: success!
-
-- **Upload Endpoint**
-  ```http request
-  POST http://nodeIP:30002/upload
-  ```
-
-  ```console
-   curl -X POST -F 'file=@./video.mp4' -H 'Authorization: Bearer <JWT Token>' http://nodeIP:30002/upload
-  ``` 
-  
-  Check if you received the ID on your email.
-
-- **Download Endpoint**
-  ```http request
-  GET http://nodeIP:30002/download?fid=<Generated file identifier>
-  ```
-  ```console
-   curl --output video.mp3 -X GET -H 'Authorization: Bearer <JWT Token>' "http://nodeIP:30002/download?fid=<Generated fid>"
-  ``` 
-
-## Destroying the Infrastructure
-
-To clean up the infrastructure, follow these steps:
-
-1. **Delete the Node Group:** Delete the node group associated with your EKS cluster.
-
-2. **Delete the EKS Cluster:** Once the nodes are deleted, you can proceed to delete the EKS cluster itself.
+- Building and deploying **multi-service applications** on AWS using Kubernetes  
+- Using **Helm**, `kubectl`, and managing **IAM roles and AWS networking** for secure infrastructure  
+- Understanding the power of **microservices and asynchronous communication** via RabbitMQ  
+- Securing cloud-native applications with **JWT**, **Kubernetes Secrets**, and **IAM-based access control**

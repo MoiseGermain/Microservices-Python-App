@@ -113,3 +113,21 @@ Throughout this project, I gained practical experience in:
 - Using **Helm**, `kubectl`, and managing **IAM roles and AWS networking** for secure infrastructure  
 - Understanding the power of **microservices and asynchronous communication** via RabbitMQ  
 - Securing cloud-native applications with **JWT**, **Kubernetes Secrets**, and **IAM-based access control**
+
+---
+
+### 🧠 Reflections & Challenges Overcome
+
+- **Service discovery in EKS:** Initially struggled with getting services to communicate across pods. I learned to define proper `ClusterIP` services and DNS-based service discovery in Kubernetes.
+- **RabbitMQ queue initialization:** Had to manually configure queues before deployment, which led me to explore automating that as part of CI/CD or Helm post-install hooks.
+- **Persistent storage for databases:** Setting up volume claims using the EBS CSI driver was new territory. I overcame issues by enabling the add-on and correctly configuring storage classes.
+- **Email & 2FA integration:** Handling Gmail authentication securely in a containerized environment taught me the importance of managing secrets properly, and how to structure manifests without exposing credentials.
+
+These challenges made the project both rewarding and educational, giving me insight into real-world DevOps workflows and multi-service deployments at scale.
+
+## 🙌 Feel Free to Fork or Clone This Repo
+
+If you're exploring **Kubernetes**, **Amazon EKS**, or working with **multi-container applications**, this project is a great hands-on starting point.
+
+Want help replicating it or adapting it to your use case?  
+Feel free to reach out to me on [LinkedIn](https://linkedin.com/in/moisegermain) — I’d be happy to connect!
